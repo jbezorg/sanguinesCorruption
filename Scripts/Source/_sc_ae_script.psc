@@ -7,7 +7,7 @@ Faction                   property CurrentFollowerFaction         auto
 Keyword                   property ActorTypeNPC                   auto
 String[]                  property defeatEvents                   auto
 Bool                      property bSexLabDefeatLoaded            auto  hidden
-;DefeatConfig              property kSexLabDefeatResources         auto  hidden
+Faction                   property kSexLabDefeatFaction           auto  hidden
 
 Actor[]            sexActors
 sslBaseAnimation[] animations
@@ -61,12 +61,15 @@ endFunction
 ; This functions exactly as and has the same purpose as the SkyUI function
 ; GetVersion(). It returns the static version of the AE script.
 int function aeGetVersion()
-	return 1
+	return 2
 endFunction
 
 function aeUpdate( int aiVersion )
-	bSexLabDefeatLoaded    = Game.GetFormFromFile(0x00000d62, "SexLabDefeat.esp") != none
-	;kSexLabDefeatResources = ( Game.GetFormFromFile(0x0004b8d1, "SexLabDefeat.esp") as Quest ) as DefeatConfig
+	bSexLabDefeatLoaded = Game.GetFormFromFile(0x00000d62, "SexLabDefeat.esp") != none
+	
+	if bSexLabDefeatLoaded
+		kSexLabDefeatFaction = Game.GetFormFromFile(0x00001d92, "SexLabDefeat.esp") as Faction
+	endIf
 endFunction
 ; END AE VERSIONING ===============================================================================
 ;
@@ -115,6 +118,13 @@ function RemoveCompanions()
 		myActorsList[idxNPC] = none
 	endWhile
 endFunction
+
+function startEnslavement(actor[] akActors, actor akSlave)
+
+
+
+	Debug.TraceConditional("SC::startEnslavement: akActors" + akActors + ", akSlave:" + akSlave, ae.VERBOSE)
+endFunction
 ; END SC FUNCTIONS ================================================================================
 ;
 ;
@@ -155,7 +165,7 @@ event OnSCEvent(String asEventName, string asStat, float afStatValue, Form akSen
 				sexActors[0].SetGhost(False)
 				sexActors[1].SetGhost(False)
 			endIf
-		elseIf false ;kSender.HasSpell( kSexLabDefeatResources.DebuffConsSPL ) || kSender.HasSpell( kSexLabDefeatResources.TrueCalmSPL )
+		elseIf kSender.IsInFaction( kSexLabDefeatFaction )
 			idx = defeatEvents.length
 			while idx > 0
 				idx -= 1
@@ -179,11 +189,11 @@ endEvent
 
 event scAnimaEnd(string eventName, string argString, float argNum, form sender)
 	actor[] actorList = SexLab.HookActors(argString)
+	actor kSlave = SexLab.HookVictim(argString)
 	
 	actorList[0].SetGhost(False)
 	actorList[1].SetGhost(False)
-
-	; do the enslavement stuff
+	startEnslavement(actorList, kSlave)
 
 	UnregisterForModEvent("AnimationEnd_sanguines")
 	UnregisterForModEvent("StageEnd_sanguines")
@@ -193,10 +203,10 @@ endEvent
 ; Sexlab Defeat Events
 event defeatAnimaStart(string eventName, string argString, float argNum, form sender)
 	actor[] actorList = SexLab.HookActors(argString)
-	actor kVictim = SexLab.HookVictim(argString)
+	actor kSlave = SexLab.HookVictim(argString)
 	
-	if kVictim && myActorsList.Find(kVictim) >= 0
-		kVictim.RestoreActorValue(ae.HEALTH, 10000)
+	if kSlave && myActorsList.Find(kSlave) >= 0
+		kSlave.RestoreActorValue(ae.HEALTH, 10000)
 		UnregisterForModEvent(eventName)
 		Debug.TraceConditional("SC::" + eventName + ": " + actorList, ae.VERBOSE)
 	endIf
@@ -204,11 +214,10 @@ endEvent
 
 event defeatAnimaEnd(string eventName, string argString, float argNum, form sender)
 	actor[] actorList = SexLab.HookActors(argString)
-	actor kVictim = SexLab.HookVictim(argString)
+	actor kSlave = SexLab.HookVictim(argString)
 	
-	if kVictim && myActorsList.Find(kVictim) >= 0
-		; do the enslavement stuff
-
+	if kSlave && myActorsList.Find(kSlave) >= 0
+		startEnslavement(actorList, kSlave)
 
 		Int idx = defeatEvents.length
 		while idx > 0
