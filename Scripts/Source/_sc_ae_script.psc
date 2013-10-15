@@ -5,7 +5,9 @@ SexLabFramework           property SexLab                         auto
 Faction                   property CurrentHireling                auto
 Faction                   property CurrentFollowerFaction         auto
 Keyword                   property ActorTypeNPC                   auto
+String[]                  property defeatEvents                   auto
 Bool                      property bSexLabDefeatLoaded            auto  hidden
+;DefeatConfig              property kSexLabDefeatResources         auto  hidden
 
 Actor[]            sexActors
 sslBaseAnimation[] animations
@@ -63,7 +65,8 @@ int function aeGetVersion()
 endFunction
 
 function aeUpdate( int aiVersion )
-	bSexLabDefeatLoaded = Game.GetFormFromFile(0x00000d62, "SexLabDefeat.esp") != none
+	bSexLabDefeatLoaded    = Game.GetFormFromFile(0x00000d62, "SexLabDefeat.esp") != none
+	;kSexLabDefeatResources = ( Game.GetFormFromFile(0x0004b8d1, "SexLabDefeat.esp") as Quest ) as DefeatConfig
 endFunction
 ; END AE VERSIONING ===============================================================================
 ;
@@ -124,51 +127,90 @@ endEvent
 ; On a AE Health Event
 event OnSCEvent(String asEventName, string asStat, float afStatValue, Form akSender)
 	Debug.TraceConditional("SC::OnSCEvent: " + asEventName, ae.VERBOSE)
+
 	Actor kSender = akSender as Actor
+	Int   idx     = 0
 
 	if asEventName == myEvent + ae._START && asStat == ae.HEALTH
 		Actor kAttacker = ae.GetLastAttacker(kSender) as Actor
-
-		kSender.StopCombatAlarm()
-		kAttacker.StopCombat()
-		kAttacker.StopCombatAlarm()
 		
-		sexActors    = new actor[2]
-		sexActors[0] = kSender
-		sexActors[1] = kAttacker
+		if !bSexLabDefeatLoaded
+			kSender.StopCombat()
+			kSender.StopCombatAlarm()
+			kSender.SetGhost()
+			kAttacker.StopCombat()
+			kAttacker.StopCombatAlarm()
+			kAttacker.SetGhost()
+			
+			sexActors    = new actor[2]
+			sexActors[0] = kSender
+			sexActors[1] = kAttacker
 
-		RegisterForModEvent("AnimationStart_sanguines", "animaStart")
-		RegisterForModEvent("AnimationEnd_sanguines",   "animaEnd")
-		RegisterForModEvent("StageEnd_sanguines",       "stageEnd")
+			kSender.RegisterForModEvent("AnimationStart_sanguines", "scAnimaStart")
+			kSender.RegisterForModEvent("AnimationEnd_sanguines",   "scAnimaEnd")
 
-		animations = SexLab.PickAnimationsByActors(sexActors, aggressive = true)
-		SexLab.StartSex(sexActors, animations, Victim=kSender, hook="sanguines")
-		
-		Debug.TraceConditional("SC::OnSCEvent:TEST: " + kAttacker, ae.VERBOSE)
+			animations = SexLab.PickAnimationsByActors(sexActors, aggressive = true)
+			SexLab.StartSex(sexActors, animations, Victim=kSender, hook="sanguines")
+
+		elseIf false ;kSender.HasSpell( kSexLabDefeatResources.DebuffConsSPL ) || kSender.HasSpell( kSexLabDefeatResources.TrueCalmSPL )
+			idx = defeatEvents.length
+			while idx > 0
+				idx -= 1
+				kSender.RegisterForModEvent(defeatEvents[idx], "defeatAnimaEnd")
+				idx -= 1
+				kSender.RegisterForModEvent(defeatEvents[idx], "defeatAnimaStart")
+			endWhile
+		endIf
 	endIf
 endEvent
 
-; Sexlab Events
-event estrusChaurusStart(string eventName, string argString, float argNum, form sender)
-	sslThreadController control = SexLab.HookController(argString)
-	sslBaseAnimation anim       = SexLab.HookAnimation(argString)
-	actor[] actorList           = SexLab.HookActors(argString)
+; Sexlab SC Events
+event scAnimaStart(string eventName, string argString, float argNum, form sender)
+	actor[] actorList = SexLab.HookActors(argString)
 	
 	actorList[0].RestoreActorValue(ae.HEALTH, 10000)
-
-	UnregisterForModEvent("AnimationStart_sanguines")
+	UnregisterForModEvent(eventName)
 endEvent
 
-event estrusChaurusEnd(string eventName, string argString, float argNum, form sender)
+event scAnimaEnd(string eventName, string argString, float argNum, form sender)
 	actor[] actorList = SexLab.HookActors(argString)
+	Actor   kSender   = sender as Actor
+	
+	actorList[0].SetGhost(False)
+	actorList[1].SetGhost(False)
+
+	; do the enslavement stuff
 
 	UnregisterForModEvent("AnimationEnd_sanguines")
 	UnregisterForModEvent("StageEnd_sanguines")
+	Debug.TraceConditional("SC::" + eventName + ": " + kSender, ae.VERBOSE)
 endEvent
 
-event estrusChaurusStage(string eventName, string argString, float argNum, form sender)
-	sslBaseAnimation anim = SexLab.HookAnimation(argString)
-	actor[] actorList     = SexLab.HookActors(argString)
-	int stage             = SexLab.HookStage(argString)
-
+; Sexlab Defeat Events
+event defeatAnimaStart(string eventName, string argString, float argNum, form sender)
+	actor[] actorList = SexLab.HookActors(argString)
+	Actor   kSender   = sender as Actor
+	
+	if actorList.Find(kSender) >= 0
+		actorList[0].RestoreActorValue(ae.HEALTH, 10000)
+		UnregisterForModEvent(eventName)
+	endIf
 endEvent
+
+event defeatAnimaEnd(string eventName, string argString, float argNum, form sender)
+	actor[] actorList = SexLab.HookActors(argString)
+	Actor   kSender   = sender as Actor
+
+	if actorList.Find(kSender) >= 0
+		; do the enslavement stuff
+
+
+		Int idx = defeatEvents.length
+		while idx > 0
+			idx -= 1
+			UnregisterForModEvent(defeatEvents[idx])
+		endWhile
+		Debug.TraceConditional("SC::" + eventName + ": " + kSender, ae.VERBOSE)
+	endIf
+endEvent
+; END SC EVENTS ===================================================================================
