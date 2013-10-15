@@ -146,19 +146,22 @@ event OnSCEvent(String asEventName, string asStat, float afStatValue, Form akSen
 			sexActors[0] = kSender
 			sexActors[1] = kAttacker
 
-			kSender.RegisterForModEvent("AnimationStart_sanguines", "scAnimaStart")
-			kSender.RegisterForModEvent("AnimationEnd_sanguines",   "scAnimaEnd")
+			RegisterForModEvent("AnimationStart_sanguines", "scAnimaStart")
+			RegisterForModEvent("AnimationEnd_sanguines",   "scAnimaEnd")
 
 			animations = SexLab.PickAnimationsByActors(sexActors, aggressive = true)
-			SexLab.StartSex(sexActors, animations, Victim=kSender, hook="sanguines")
-
+			
+			if SexLab.StartSex(sexActors, animations, Victim=kSender, hook="sanguines") < 0
+				sexActors[0].SetGhost(False)
+				sexActors[1].SetGhost(False)
+			endIf
 		elseIf false ;kSender.HasSpell( kSexLabDefeatResources.DebuffConsSPL ) || kSender.HasSpell( kSexLabDefeatResources.TrueCalmSPL )
 			idx = defeatEvents.length
 			while idx > 0
 				idx -= 1
-				kSender.RegisterForModEvent(defeatEvents[idx], "defeatAnimaEnd")
+				RegisterForModEvent(defeatEvents[idx], "defeatAnimaEnd")
 				idx -= 1
-				kSender.RegisterForModEvent(defeatEvents[idx], "defeatAnimaStart")
+				RegisterForModEvent(defeatEvents[idx], "defeatAnimaStart")
 			endWhile
 		endIf
 	endIf
@@ -170,11 +173,12 @@ event scAnimaStart(string eventName, string argString, float argNum, form sender
 	
 	actorList[0].RestoreActorValue(ae.HEALTH, 10000)
 	UnregisterForModEvent(eventName)
+
+	Debug.TraceConditional("SC::" + eventName + ": " + actorList, ae.VERBOSE)
 endEvent
 
 event scAnimaEnd(string eventName, string argString, float argNum, form sender)
 	actor[] actorList = SexLab.HookActors(argString)
-	Actor   kSender   = sender as Actor
 	
 	actorList[0].SetGhost(False)
 	actorList[1].SetGhost(False)
@@ -183,25 +187,26 @@ event scAnimaEnd(string eventName, string argString, float argNum, form sender)
 
 	UnregisterForModEvent("AnimationEnd_sanguines")
 	UnregisterForModEvent("StageEnd_sanguines")
-	Debug.TraceConditional("SC::" + eventName + ": " + kSender, ae.VERBOSE)
+	Debug.TraceConditional("SC::" + eventName + ": " + actorList, ae.VERBOSE)
 endEvent
 
 ; Sexlab Defeat Events
 event defeatAnimaStart(string eventName, string argString, float argNum, form sender)
 	actor[] actorList = SexLab.HookActors(argString)
-	Actor   kSender   = sender as Actor
+	actor kVictim = SexLab.HookVictim(argString)
 	
-	if actorList.Find(kSender) >= 0
-		actorList[0].RestoreActorValue(ae.HEALTH, 10000)
+	if kVictim && myActorsList.Find(kVictim) >= 0
+		kVictim.RestoreActorValue(ae.HEALTH, 10000)
 		UnregisterForModEvent(eventName)
+		Debug.TraceConditional("SC::" + eventName + ": " + actorList, ae.VERBOSE)
 	endIf
 endEvent
 
 event defeatAnimaEnd(string eventName, string argString, float argNum, form sender)
 	actor[] actorList = SexLab.HookActors(argString)
-	Actor   kSender   = sender as Actor
-
-	if actorList.Find(kSender) >= 0
+	actor kVictim = SexLab.HookVictim(argString)
+	
+	if kVictim && myActorsList.Find(kVictim) >= 0
 		; do the enslavement stuff
 
 
@@ -210,7 +215,7 @@ event defeatAnimaEnd(string eventName, string argString, float argNum, form send
 			idx -= 1
 			UnregisterForModEvent(defeatEvents[idx])
 		endWhile
-		Debug.TraceConditional("SC::" + eventName + ": " + kSender, ae.VERBOSE)
+		Debug.TraceConditional("SC::" + eventName + ": " + actorList, ae.VERBOSE)
 	endIf
 endEvent
 ; END SC EVENTS ===================================================================================
