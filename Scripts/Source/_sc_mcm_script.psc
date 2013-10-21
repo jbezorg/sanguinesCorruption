@@ -42,7 +42,8 @@ event OnPageReset(string a_page)
 
 ; STATUS ==========================================================================================
 	if ( a_page == Pages[0] )
-
+		AddHeaderOption("$SC_ESSENTIAL_TITLE")
+		AddToggleOptionST("STATE_ESSENTIAL", me.myActorsList[0].GetActorBase().GetName(), me.myActorsList[0].IsEssential(), iOptionFlag)
 
 	
 ; COMPANIONS ======================================================================================
@@ -70,6 +71,27 @@ event OnPageReset(string a_page)
 		endIf		
 	endIf
 endEvent
+
+; ESSENTIAL =======================================================================================
+state STATE_ESSENTIAL ; TOGGLE
+	event OnSelectST()
+		ActorBase kBase     = me.myActorsList[0].GetActorBase()
+		Bool kBaseEssential = !kBase.IsEssential()
+
+		kBase.SetEssential( kBaseEssential )
+		SetToggleOptionValueST( kBaseEssential )
+	endEvent
+
+	event OnDefaultST()
+		ActorBase kBase = me.myActorsList[0].GetActorBase()
+		kBase.SetEssential( false )
+		SetToggleOptionValueST( false )
+	endEvent
+
+	event OnHighlightST()
+		SetInfoText("$SC_ESSENTIAL_INFO")
+	endEvent
+endState
 
 ; COMPANIONS ======================================================================================
 state STATE_COMPANIONS ; TOGGLE
