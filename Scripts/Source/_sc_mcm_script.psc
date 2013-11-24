@@ -4,6 +4,7 @@ Scriptname _sc_mcm_script extends SKI_ConfigBase  Conditional
 _sc_ae_script       property me                    auto
 Bool                property bRegisterCompanions   auto  hidden
 
+; VERSION CONTROL AND UPDATES =====================================================================
 int function GetVersion()
 	return 1000
 endFunction
@@ -24,6 +25,7 @@ event OnVersionUpdate(int a_version)
 	endIf
 endEvent
 
+; PAGE AND OPTION GENERATION ======================================================================
 event OnPageReset(string a_page)
 	if (a_page == "" || !Self.IsRunning() )
 		LoadCustomContent("jbezorg/sanguinesCorruption.dds", 135, 53)
@@ -72,6 +74,7 @@ event OnPageReset(string a_page)
 	endIf
 endEvent
 
+; USER ACTIONS ====================================================================================
 ; ESSENTIAL =======================================================================================
 state STATE_ESSENTIAL ; TOGGLE
 	event OnSelectST()

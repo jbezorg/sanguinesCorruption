@@ -14,3 +14,7 @@ Outfit              property nudeOutfit      auto
 
 ; VERSION 7
 GlobalVariable      property GameHour        auto
+
+; VERSION 8
+Keyword             property questTrigger    auto
+ImageSpaceModifier  property blackoutISM     auto  

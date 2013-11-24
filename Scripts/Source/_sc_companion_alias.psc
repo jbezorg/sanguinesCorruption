@@ -2,17 +2,19 @@ Scriptname _sc_companion_alias extends ReferenceAlias
 
 _sc_slave_script slave
 Actor            kCompanion
+Actor            kMaster
 ObjectReference  kMarker
 ObjectReference  kContainer
 Int              iIndex
 
 Event OnInit()
 	slave      = self.GetOwningQuest() as _sc_slave_script
-	kCompanion = self.GetReference() as Actor
+	kCompanion = self.GetActorReference()
 	iIndex     = slave.companions.Find(self)
 	
 	if kCompanion
 		kMarker    = slave.companionMarkers[iIndex].GetReference()
+		kMaster    = slave.companionMasters[iIndex].GetActorReference()
 		kContainer = slave.companionContainers[iIndex].GetReference()
 		
 		if kContainer == none
@@ -20,9 +22,15 @@ Event OnInit()
 		endIf
 
 		kCompanion.MoveTo( kMarker )
-		kCompanion.RemoveAllItems( kContainer, true )
 		kCompanion.SetOutfit( slave.re.nudeOutfit )
+		kCompanion.RemoveAllItems( kContainer, true )
+
+		slave.equipBindings(kCompanion)
+
 		kCompanion.EvaluatePackage()
 		kCompanion.MoveToPackageLocation()
+		kCompanion.SetAV("WaitingForPlayer", 1)
+		
+		slavery.MakeSlave(kCompanion, kMaster)
 	endIf
 EndEvent
