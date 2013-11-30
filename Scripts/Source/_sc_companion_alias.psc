@@ -31,6 +31,6 @@ Event OnInit()
 		kCompanion.MoveToPackageLocation()
 		kCompanion.SetAV("WaitingForPlayer", 1)
 		
-		slavery.MakeSlave(kCompanion, kMaster)
+		slave.slavery.Make(kCompanion, kMaster)
 	endIf
 EndEvent

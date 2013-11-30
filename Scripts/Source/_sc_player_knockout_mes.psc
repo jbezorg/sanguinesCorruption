@@ -7,9 +7,8 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 	Game.ForceFirstPerson()
 	Game.DisablePlayerControls(true,true,true,true,true,true)
 	akTarget.PlayIdle(re.knockoutPlayer)
-	Utility.Wait(6.0)
-	re.blackoutISM.ApplyCrossFade(1.0)
-	Utility.Wait(4.0)
+	Utility.Wait(10.0)
+	;re.blackoutISM.ApplyCrossFade(1.0)
 
 	int sum = ae.countCompanions()
 	int idx = ae.myActorsList.length
@@ -26,7 +25,12 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 		endIf
 	endWhile
 
+	Debug.Trace("slaveryTrigger.SendStoryEvent")
 	re.slaveryTrigger.SendStoryEvent( aiValue1 = 1, aiValue2 = sum )
+endEvent
+
+event OnEffectFinish(Actor akTarget, Actor akCaster)
+	ae.SexLab.AllowActor(akTarget)
 endEvent
 
 _sc_mcm_script   property mcm              auto

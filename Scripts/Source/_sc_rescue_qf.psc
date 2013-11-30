@@ -107,7 +107,7 @@ while idx > 0
 	idx -= 1
 	ReferenceAlias nthAlias = self.GetNthAlias(idx) as ReferenceAlias
 	if nthAlias
-		companions = slavery.PushActor(nthAlias.GetActorReference(), companions)
+		companions = _sf_utility.PushActor(nthAlias.GetActorReference(), companions)
 
 		if !self.IsObjectiveDisplayed(idx)
 			self.SetObjectiveDisplayed(idx, true, true)
@@ -151,6 +151,7 @@ _sc_mcm_script   property mcm               auto
 _sc_ae_script    property ae                auto
 _sc_resources    property re                auto
 _sc_slave_script property slave             auto
+_sf_slavery      property slavery           auto
 
 actor[]          property companions = none auto hidden
 int              property completed = 0     auto hidden Conditional 

@@ -6,7 +6,7 @@ Faction                   property CurrentHireling                auto
 Faction                   property CurrentFollowerFaction         auto
 Keyword                   property ActorTypeNPC                   auto
 String[]                  property defeatEvents                   auto
-Bool                      property bSexLabDefeatLoaded            auto  hidden
+Bool                      property bSexLabDefeatLoaded = false    auto  hidden
 Faction                   property kSexLabDefeatFaction           auto  hidden
 
 ; VERSION 4
@@ -79,6 +79,23 @@ function aeUpdate( int aiVersion )
 			idx = 0
 		endIf
 	endWhile
+
+	bSexLabDefeatLoaded = false
+	
+	if bSexLabDefeatLoaded
+		idx = defeatEvents.length
+		while idx > 0
+			idx -= 1
+			RegisterForModEvent(defeatEvents[idx], "defeatAnimaEnd")
+		endWhile
+		
+		if myIndex >= 0
+			myIndex = -1
+			ae.unRegister(self)
+		endIf
+	elseIf myIndex < 0
+		aeRegisterMod()
+	endIf
 	
 	if (myVersion >= 4 && aiVersion < 4)
 		_sc_knockout = Game.GetFormFromFile(0x00005e29, "sanguinesCorruption.esp") as Spell
@@ -166,6 +183,7 @@ endFunction
 ; =================================================================================================
 event OnInit()
 	aeRegisterMod()
+	aeRegisterEvents()
 endEvent
 
 ; On a AE Health Event
@@ -202,12 +220,6 @@ event OnSCEvent(String asEventName, string asStat, float afStatValue, Form akSen
 			else
 				startEnslavement(captureActors, kSender )
 			endIf
-		elseIf kSender == Game.GetPlayer() && kSender.IsInFaction( kSexLabDefeatFaction )
-			Int idx = defeatEvents.length
-			while idx > 0
-				idx -= 1
-				RegisterForModEvent(defeatEvents[idx], "defeatAnimaEnd")
-			endWhile
 		endIf
 	endIf
 endEvent
@@ -228,13 +240,15 @@ event defeatAnimaEnd(string eventName, string argString, float argNum, form send
 	actor[] actorList = SexLab.HookActors(argString)
 	actor kSlave      = SexLab.HookVictim(argString)
 	
-	startEnslavement(actorList, kSlave)
+	if kSlave == Game.GetPlayer()
+		startEnslavement(actorList, kSlave)
 
-	Int idx = defeatEvents.length
-	while idx > 0
-		idx -= 1
-		UnregisterForModEvent(defeatEvents[idx])
-	endWhile
-	Debug.TraceConditional("SC::" + eventName + ": " + actorList, ae.VERBOSE)
+		;Int idx = defeatEvents.length
+		;while idx > 0
+		;	idx -= 1
+		;	UnregisterForModEvent(defeatEvents[idx])
+		;endWhile
+		Debug.TraceConditional("SC::" + eventName + ": " + actorList, ae.VERBOSE)
+	endIf
 endEvent
 ; END SC EVENTS ===================================================================================

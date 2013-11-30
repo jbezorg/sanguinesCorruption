@@ -6,6 +6,7 @@ ReferenceAlias[]  Property companionMarkers    Auto
 ReferenceAlias[]  Property companionContainers Auto
 ReferenceAlias[]  Property companionMasters    Auto
 
+LocationAlias     Property fortunateLocation   Auto
 LocationAlias     Property playerSlaveLocation Auto
 ReferenceAlias    Property playerSlave         Auto
 ReferenceAlias    Property playerSlaveCage     Auto
@@ -17,6 +18,8 @@ Keyword[]         Property LocationType        Auto
 _sc_mcm_script    Property mcm                 auto
 _sc_ae_script     Property ae                  auto
 _sc_resources     Property re                  auto
+_sf_slavery       Property slavery             auto
+
 
 Actor           kPlayer
 Actor           kMaster
@@ -64,32 +67,43 @@ endFunction
 
 event OnStoryScript(Keyword akKeyword, Location akLocation, ObjectReference akRef1, ObjectReference akRef2, int aiValue1, int aiValue2)
 	Debug.TraceConditional("SC::OnStoryScript: aiValue1=" + aiValue1 + ", aiValue2=" + aiValue2, ae.ae.VERBOSE)
+	while !self.IsRunning()
+		Utility.Wait(1.0)
+	endWhile
 
-	Utility.Wait(4.0)
-	re.GameHour.Mod( Utility.RandomFloat(20.0, 28.0) )
-	
+	if Game.GetCameraState() != 0
+		Game.ForceFirstPerson()
+	endIf
+
 	kPlayer    = playerSlave.GetActorReference()
 	kMaster    = playerMaster.GetActorReference()
 	kContainer = playerContainer.GetReference() as ObjectReference
 	kLocation  = playerSlaveLocation.GetLocation()
 	
-	slavery.MakeSlave(kPlayer, kMaster)
+	int status = slavery.Make(kPlayer, kMaster)
 
-	kPlayer.MoveTo( playerSlaveCage.GetReference() )
-	kPlayer.RemoveAllItems( kContainer, true )
-	equipBindings(kPlayer)
-	kPlayer.PlayIdle( re.getUpPlayer )
-	Utility.Wait(6.0)
-	Game.EnablePlayerControls()
-	
-	ae.SexLab.AllowActor(kPlayer)
-	
-	int idx = LocationType.length
-	while idx > 0
-		idx -= 1
-		if kLocation.HasKeyword(LocationType[idx])
-			re.questTrigger.SendStoryEvent(kLocation, kMaster as ObjectReference, kPlayer as ObjectReference, idx )
-			idx = 0
-		endIf
-	endWhile
+	Debug.TraceConditional("SC::OnStoryScript:Status::" + status, ae.ae.VERBOSE)
+	if status > 0
+		kPlayer.MoveTo( playerSlaveCage.GetReference() )
+		kPlayer.RemoveAllItems( kContainer, true )
+		equipBindings(kPlayer)
+		re.GameHour.Mod( Utility.RandomFloat(20.0, 28.0) )
+		kPlayer.PlayIdle( re.getUpPlayer )
+		Utility.Wait(6.0)
+		Game.EnablePlayerControls()
+		
+		
+		int idx = LocationType.length
+		while idx > 0
+			idx -= 1
+			if kLocation.HasKeyword(LocationType[idx])
+				re.questTrigger.SendStoryEvent(kLocation, kMaster as ObjectReference, kPlayer as ObjectReference, idx )
+				idx = 0
+			endIf
+		endWhile
+	else
+		;some place else
+	endIf
+
+	ae.SexLab.AllowActor(kPlayer)	
 endEvent
