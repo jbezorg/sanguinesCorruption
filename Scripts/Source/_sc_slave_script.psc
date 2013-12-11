@@ -24,6 +24,7 @@ _sf_slavery       Property slavery             auto
 Actor           kPlayer
 Actor           kMaster
 ObjectReference kContainer
+ObjectReference kCage
 Location        kLocation
 
 int Function qvGetVersion()
@@ -75,16 +76,29 @@ event OnStoryScript(Keyword akKeyword, Location akLocation, ObjectReference akRe
 		Game.ForceFirstPerson()
 	endIf
 
+	RegisterForModEvent("slavery.sync.sanguine", "syncComplete")
+	RegisterForModEvent("slavery.make.sanguine", "makeComplete")
+
 	kPlayer    = playerSlave.GetActorReference()
 	kMaster    = playerMaster.GetActorReference()
 	kContainer = playerContainer.GetReference() as ObjectReference
 	kLocation  = playerSlaveLocation.GetLocation()
-	
-	int status = slavery.Make(kPlayer, kMaster)
+	kCage      = playerSlaveCage.GetReference() as ObjectReference
 
-	Debug.TraceConditional("SC::OnStoryScript:Status::" + status, ae.ae.VERBOSE)
-	if status > 0
-		kPlayer.MoveTo( playerSlaveCage.GetReference() )
+	slavery.Make(kPlayer, kMaster)
+	slavery.Make(kPlayer, kMaster, "sanguine")
+endEvent
+
+event syncComplete(string asEvent, string asError, float afError, form akSlavery)
+	Debug.Trace("SC::Event:"+asEvent+":"+asError+":"+afError)
+endEvent
+
+event makeComplete(string asEvent, string asError, float afError, form akSlavery)
+	Debug.Trace("SC::Event:"+asEvent+":"+asError+":"+afError)
+
+	;ae.SexLab.AllowActor(kPlayer)	
+	if afError > 0.0
+		kPlayer.MoveTo(kCage)
 		kPlayer.RemoveAllItems( kContainer, true )
 		equipBindings(kPlayer)
 		re.GameHour.Mod( Utility.RandomFloat(20.0, 28.0) )
@@ -102,8 +116,9 @@ event OnStoryScript(Keyword akKeyword, Location akLocation, ObjectReference akRe
 			endIf
 		endWhile
 	else
-		;some place else
+		kPlayer.PlayIdle( re.getUpPlayer )
+		Utility.Wait(6.0)
+		Game.EnablePlayerControls()
+		Stop()
 	endIf
-
-	ae.SexLab.AllowActor(kPlayer)	
 endEvent

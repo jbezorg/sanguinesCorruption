@@ -6,9 +6,10 @@ Scriptname _sc_rescue_tif_01 Extends TopicInfo Hidden
 Function Fragment_0(ObjectReference akSpeakerRef)
 Actor akSpeaker = akSpeakerRef as Actor
 ;BEGIN CODE
-slavery.quit(akSpeaker)
+slavery.remove(akSpeaker)
 slave.unequipBindings(akSpeaker)
 akSpeaker.SetAV("WaitingForPlayer", 0)
+
 GetOwningQuest().SetObjectiveCompleted(qf.companions.Find(akSpeaker))
 qf.completed += 1
 

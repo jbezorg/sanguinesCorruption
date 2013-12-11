@@ -1,7 +1,7 @@
 Scriptname _sc_player_knockout_mes extends activemagiceffect
 
 event OnEffectStart(Actor akTarget, Actor akCaster)
-	ae.SexLab.ForbidActor(akTarget)
+	;ae.SexLab.ForbidActor(akTarget)
 
 	re.strikeISM.Apply()
 	Game.ForceFirstPerson()
@@ -16,21 +16,23 @@ event OnEffectStart(Actor akTarget, Actor akCaster)
 
 	while idx > 1 && cnt < sum
 		idx -= 1
-		if ae.SexLab.ValidateActor(ae.myActorsList[idx]) > 0
-			slave.companions[cnt].ForceRefTo(ae.myActorsList[idx])
-			cnt += 1
-		else
-			ae.myActorsList[idx].MoveToMyEditorLocation()
-			ae.myActorsList[idx].SetAV("WaitingForPlayer", 1)
+		if ae.myActorsList[idx] != none
+			if ae.SexLab.ValidateActor(ae.myActorsList[idx]) > 0
+				slave.companions[cnt].ForceRefTo(ae.myActorsList[idx])
+				cnt += 1
+			else
+				ae.myActorsList[idx].MoveToMyEditorLocation()
+				ae.myActorsList[idx].SetAV("WaitingForPlayer", 1)
+			endIf
 		endIf
 	endWhile
 
 	Debug.Trace("slaveryTrigger.SendStoryEvent")
-	re.slaveryTrigger.SendStoryEvent( aiValue1 = 1, aiValue2 = sum )
+	re.slaveryTrigger.SendStoryEvent( aiValue1 = 1, aiValue2 = cnt )
 endEvent
 
 event OnEffectFinish(Actor akTarget, Actor akCaster)
-	ae.SexLab.AllowActor(akTarget)
+	;ae.SexLab.AllowActor(akTarget)
 endEvent
 
 _sc_mcm_script   property mcm              auto
